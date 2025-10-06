@@ -20,18 +20,24 @@ export type Database = {
           dancer_id: string
           event_id: string
           id: string
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
           dancer_id: string
           event_id: string
           id?: string
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
           dancer_id?: string
           event_id?: string
           id?: string
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
