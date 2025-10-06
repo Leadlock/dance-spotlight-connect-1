@@ -19,6 +19,7 @@ interface Application {
   id: string;
   dancer: {
     name: string;
+    email: string;
     dance_style: string;
     gender: string;
     video_url: string;
@@ -63,7 +64,7 @@ export const OrganizerEventsList = ({ organizerId }: OrganizerEventsListProps) =
         .from("applications")
         .select(`
           id,
-          dancer:profiles(name, dance_style, gender, video_url)
+          dancer:profiles(name, email, dance_style, gender, video_url)
         `)
         .eq("event_id", eventId);
 
@@ -186,34 +187,46 @@ export const OrganizerEventsList = ({ organizerId }: OrganizerEventsListProps) =
             ) : (
               applications.map((app) => (
                 <Card key={app.id} className="overflow-hidden">
-                  <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <h3 className="font-semibold text-lg">{app.dancer.name}</h3>
-                        <div className="space-y-1 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Music2 className="w-4 h-4 text-muted-foreground" />
-                            <span>{app.dancer.dance_style}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-muted-foreground" />
-                            <span>{app.dancer.gender}</span>
-                          </div>
+                  <div className="h-1 bg-gradient-to-r from-secondary to-accent" />
+                  <CardContent className="pt-6 space-y-4">
+                    <div>
+                      <h3 className="font-bold text-xl mb-3">{app.dancer.name}</h3>
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm mb-4">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="gap-1">
+                            <Music2 className="w-3 h-3" />
+                            {app.dancer.dance_style}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="gap-1">
+                            <Users className="w-3 h-3" />
+                            {app.dancer.gender}
+                          </Badge>
                         </div>
                       </div>
-                      {app.dancer.video_url && (
-                        <div className="rounded-lg overflow-hidden">
+                      <p className="text-sm text-muted-foreground">{app.dancer.email}</p>
+                    </div>
+                    
+                    {app.dancer.video_url ? (
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-sm">Performance Video</h4>
+                        <div className="rounded-lg overflow-hidden bg-muted">
                           <video
                             src={app.dancer.video_url}
                             controls
-                            className="w-full h-auto"
-                            style={{ maxHeight: "200px" }}
+                            className="w-full"
+                            style={{ maxHeight: "400px" }}
                           >
                             Your browser does not support the video tag.
                           </video>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-sm text-muted-foreground">
+                        No performance video uploaded
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))
