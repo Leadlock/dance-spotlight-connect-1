@@ -59,17 +59,20 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
     if (!videoFile) return null;
 
     const fileExt = videoFile.name.split('.').pop();
-    const fileName = `${userId}-${Date.now()}.${fileExt}`;
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${userId}/${fileName}`;
 
     const { data, error } = await supabase.storage
       .from('dancer-videos')
-      .upload(fileName, videoFile);
+      .upload(filePath, videoFile, {
+        upsert: true
+      });
 
     if (error) throw error;
 
     const { data: { publicUrl } } = supabase.storage
       .from('dancer-videos')
-      .getPublicUrl(fileName);
+      .getPublicUrl(filePath);
 
     return publicUrl;
   };
