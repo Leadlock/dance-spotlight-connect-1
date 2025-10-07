@@ -117,32 +117,50 @@ export type Database = {
       }
       profiles: {
         Row: {
+          about: string | null
+          age: number | null
+          certification_document_url: string | null
           created_at: string
           dance_style: string
           email: string
+          experience: string | null
           gender: string
+          height: string | null
           id: string
           name: string
+          skin_tone: string | null
           updated_at: string
           video_url: string | null
         }
         Insert: {
+          about?: string | null
+          age?: number | null
+          certification_document_url?: string | null
           created_at?: string
           dance_style: string
           email: string
+          experience?: string | null
           gender: string
+          height?: string | null
           id: string
           name: string
+          skin_tone?: string | null
           updated_at?: string
           video_url?: string | null
         }
         Update: {
+          about?: string | null
+          age?: number | null
+          certification_document_url?: string | null
           created_at?: string
           dance_style?: string
           email?: string
+          experience?: string | null
           gender?: string
+          height?: string | null
           id?: string
           name?: string
+          skin_tone?: string | null
           updated_at?: string
           video_url?: string | null
         }

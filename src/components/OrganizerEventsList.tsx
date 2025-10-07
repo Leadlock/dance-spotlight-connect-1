@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Calendar, Music2, Users, Eye, Trash2 } from "lucide-react";
+import { Calendar, Music2, Users, Eye, Trash2, CheckCircle, XCircle, FileText, User, Ruler, Palette } from "lucide-react";
 
 interface Event {
   id: string;
@@ -17,12 +18,21 @@ interface Event {
 
 interface Application {
   id: string;
+  created_at: string;
+  status: string;
   dancer: {
+    id: string;
     name: string;
     email: string;
     dance_style: string;
     gender: string;
-    video_url: string;
+    age?: number;
+    height?: string;
+    skin_tone?: string;
+    experience?: string;
+    about?: string;
+    video_url: string | null;
+    certification_document_url?: string | null;
   };
 }
 
@@ -36,6 +46,7 @@ export const OrganizerEventsList = ({ organizerId }: OrganizerEventsListProps) =
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [showApplicants, setShowApplicants] = useState(false);
+  const [loadingApplications, setLoadingApplications] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -59,19 +70,83 @@ export const OrganizerEventsList = ({ organizerId }: OrganizerEventsListProps) =
   };
 
   const fetchApplications = async (eventId: string) => {
+    setLoadingApplications(true);
     try {
       const { data, error } = await supabase
         .from("applications")
         .select(`
           id,
-          dancer:profiles(name, email, dance_style, gender, video_url)
+          created_at,
+          status,
+          dancer:profiles!applications_dancer_id_fkey (
+            id,
+            name,
+            email,
+            dance_style,
+            gender,
+            age,
+            height,
+            skin_tone,
+            experience,
+            about,
+            video_url,
+            certification_document_url
+          )
         `)
         .eq("event_id", eventId);
 
       if (error) throw error;
-      setApplications(data as any || []);
+      setApplications(data as unknown as Application[] || []);
     } catch (error: any) {
       toast.error("Failed to load applications");
+    } finally {
+      setLoadingApplications(false);
+    }
+  };
+
+  const handleStatusUpdate = async (
+    applicationId: string,
+    dancerId: string,
+    status: 'approved' | 'rejected',
+    dancerEmail: string,
+    dancerName: string,
+    eventName: string
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("applications")
+        .update({ status })
+        .eq("id", applicationId);
+
+      if (error) throw error;
+
+      // Get organizer info
+      const { data: organizer } = await supabase
+        .from("organizers")
+        .select("name")
+        .eq("id", organizerId)
+        .single();
+
+      // Send notification email
+      await supabase.functions.invoke("send-application-notification", {
+        body: {
+          dancerEmail,
+          dancerName,
+          eventName,
+          status,
+          organizerName: organizer?.name || "Event Organizer"
+        }
+      });
+
+      toast.success(`Application ${status}!`);
+      
+      // Refresh applications
+      if (selectedEvent) {
+        await fetchApplications(selectedEvent.id);
+      }
+    } catch (error: any) {
+      console.error("Error updating application:", error);
+      toast.error("Failed to update application");
     }
   };
 
@@ -172,66 +247,184 @@ export const OrganizerEventsList = ({ organizerId }: OrganizerEventsListProps) =
       </div>
 
       <Dialog open={showApplicants} onOpenChange={setShowApplicants}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Applicants for {selectedEvent?.name}</DialogTitle>
+            <DialogTitle className="text-2xl">Applicants for {selectedEvent?.name}</DialogTitle>
             <DialogDescription>
-              {applications.length} {applications.length === 1 ? "dancer has" : "dancers have"} applied
+              Review complete dancer profiles and manage applications
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            {applications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No applications yet
-              </div>
-            ) : (
-              applications.map((app) => (
-                <Card key={app.id} className="overflow-hidden">
-                  <div className="h-1 bg-gradient-to-r from-secondary to-accent" />
-                  <CardContent className="pt-6 space-y-4">
-                    <div>
-                      <h3 className="font-bold text-xl mb-3">{app.dancer.name}</h3>
-                      <div className="grid sm:grid-cols-2 gap-3 text-sm mb-4">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="gap-1">
+
+          {loadingApplications ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : applications.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No applications yet for this event
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {applications.map((app) => (
+                <Card key={app.id} className="p-6 border-2">
+                  <div className="space-y-6">
+                    {/* Header with Actions */}
+                    <div className="flex items-start justify-between pb-4 border-b">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-2xl font-bold">{app.dancer.name}</h3>
+                          <Badge 
+                            variant={
+                              app.status === 'approved' ? 'default' : 
+                              app.status === 'rejected' ? 'destructive' : 
+                              'secondary'
+                            }
+                          >
+                            {app.status}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <Badge variant="secondary" className="flex items-center gap-1">
                             <Music2 className="w-3 h-3" />
                             {app.dancer.dance_style}
                           </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="gap-1">
-                            <Users className="w-3 h-3" />
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
                             {app.dancer.gender}
                           </Badge>
+                          {app.dancer.age && (
+                            <Badge variant="outline">{app.dancer.age} years old</Badge>
+                          )}
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{app.dancer.email}</p>
-                    </div>
-                    
-                    {app.dancer.video_url ? (
-                      <div className="space-y-2">
-                        <h4 className="font-semibold text-sm">Performance Video</h4>
-                        <div className="rounded-lg overflow-hidden bg-muted">
-                          <video
-                            src={app.dancer.video_url}
-                            controls
-                            className="w-full"
-                            style={{ maxHeight: "400px" }}
+                      
+                      {app.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleStatusUpdate(
+                              app.id, 
+                              app.dancer.id,
+                              'approved', 
+                              app.dancer.email, 
+                              app.dancer.name, 
+                              selectedEvent?.name || ''
+                            )}
+                            className="flex items-center gap-2"
                           >
-                            Your browser does not support the video tag.
-                          </video>
+                            <CheckCircle className="w-4 h-4" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleStatusUpdate(
+                              app.id,
+                              app.dancer.id,
+                              'rejected',
+                              app.dancer.email,
+                              app.dancer.name,
+                              selectedEvent?.name || ''
+                            )}
+                            className="flex items-center gap-2"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Reject
+                          </Button>
                         </div>
+                      )}
+                    </div>
+
+                    {/* Personal Details Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Email</Label>
+                        <p className="text-sm font-medium">{app.dancer.email}</p>
                       </div>
-                    ) : (
-                      <div className="text-center py-4 text-sm text-muted-foreground">
-                        No performance video uploaded
+                      {app.dancer.height && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Ruler className="w-3 h-3" />
+                            Height
+                          </Label>
+                          <p className="text-sm font-medium">{app.dancer.height}</p>
+                        </div>
+                      )}
+                      {app.dancer.skin_tone && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Palette className="w-3 h-3" />
+                            Skin Tone
+                          </Label>
+                          <p className="text-sm font-medium">{app.dancer.skin_tone}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Experience Section */}
+                    {app.dancer.experience && (
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">Experience</Label>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-lg">
+                          {app.dancer.experience}
+                        </p>
                       </div>
                     )}
-                  </CardContent>
+
+                    {/* About Section */}
+                    {app.dancer.about && (
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">About</Label>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-lg">
+                          {app.dancer.about}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Performance Video */}
+                    {app.dancer.video_url && (
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">Performance Video</Label>
+                        <video
+                          src={app.dancer.video_url}
+                          controls
+                          className="w-full rounded-lg shadow-lg"
+                          style={{ maxHeight: '500px' }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Certification */}
+                    {app.dancer.certification_document_url && (
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Dance Certification
+                        </Label>
+                        <a
+                          href={app.dancer.certification_document_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors"
+                        >
+                          <FileText className="w-4 h-4" />
+                          View Certificate
+                        </a>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-muted-foreground pt-2 border-t">
+                      Applied on {new Date(app.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+                  </div>
                 </Card>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
