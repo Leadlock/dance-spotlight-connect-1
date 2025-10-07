@@ -123,8 +123,8 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      let videoUrl = profile.video_url;
-      let certUrl = profile.certification_document_url;
+      let videoUrl = profile?.video_url;
+      let certUrl = profile?.certification_document_url;
 
       if (videoFile) {
         videoUrl = await uploadVideo();
@@ -137,14 +137,14 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
       const { error } = await supabase
         .from("profiles")
         .update({
-          name: profile.name,
-          dance_style: profile.dance_style,
-          gender: profile.gender,
-          age: profile.age,
-          height: profile.height,
-          skin_tone: profile.skin_tone,
-          experience: profile.experience,
-          about: profile.about,
+          name: profile?.name,
+          dance_style: profile?.dance_style,
+          gender: profile?.gender,
+          age: profile?.age,
+          height: profile?.height,
+          skin_tone: profile?.skin_tone,
+          experience: profile?.experience,
+          about: profile?.about,
           video_url: videoUrl,
           certification_document_url: certUrl,
         })
@@ -175,7 +175,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
             <Input
               id="name"
               value={profile?.name || ""}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              onChange={(e) => setProfile({ ...(profile || {}), name: e.target.value })}
             />
           </div>
 
@@ -190,7 +190,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
               id="age"
               type="number"
               value={profile?.age || ''}
-              onChange={(e) => setProfile({ ...profile, age: parseInt(e.target.value) || undefined })}
+              onChange={(e) => setProfile({ ...(profile || {}), age: parseInt(e.target.value) || undefined })}
               placeholder="Enter your age"
             />
           </div>
@@ -199,7 +199,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
             <Label htmlFor="height">Height</Label>
             <Select
               value={profile?.height || ''}
-              onValueChange={(value) => setProfile({ ...profile, height: value })}
+              onValueChange={(value) => setProfile({ ...(profile || {}), height: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select height" />
@@ -218,7 +218,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
             <Label htmlFor="skin_tone">Skin Tone</Label>
             <Select
               value={profile?.skin_tone || ''}
-              onValueChange={(value) => setProfile({ ...profile, skin_tone: value })}
+              onValueChange={(value) => setProfile({ ...(profile || {}), skin_tone: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select skin tone" />
@@ -237,7 +237,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
             <Label htmlFor="dance_style">Dance Style *</Label>
             <Select
               value={profile?.dance_style || ""}
-              onValueChange={(value) => setProfile({ ...profile, dance_style: value })}
+              onValueChange={(value) => setProfile({ ...(profile || {}), dance_style: value })}
             >
               <SelectTrigger id="dance_style">
                 <SelectValue placeholder="Select your dance style" />
@@ -256,7 +256,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
             <Label htmlFor="gender">Gender *</Label>
             <Select
               value={profile?.gender || ""}
-              onValueChange={(value) => setProfile({ ...profile, gender: value })}
+              onValueChange={(value) => setProfile({ ...(profile || {}), gender: value })}
             >
               <SelectTrigger id="gender">
                 <SelectValue placeholder="Select gender" />
@@ -277,7 +277,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
           <Textarea
             id="experience"
             value={profile?.experience || ''}
-            onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
+            onChange={(e) => setProfile({ ...(profile || {}), experience: e.target.value })}
             placeholder="Describe your dance experience, achievements, performances, training..."
             rows={3}
           />
@@ -288,7 +288,7 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
           <Textarea
             id="about"
             value={profile?.about || ''}
-            onChange={(e) => setProfile({ ...profile, about: e.target.value })}
+            onChange={(e) => setProfile({ ...(profile || {}), about: e.target.value })}
             placeholder="Tell us about yourself, your passion for dance, goals..."
             rows={3}
           />
@@ -330,15 +330,15 @@ export const DancerProfile = ({ profile: initialProfile, userId }: DancerProfile
             className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
             onClick={() => document.getElementById('cert-upload')?.click()}
           >
-            {profile.certification_document_url || certFile ? (
+            {profile?.certification_document_url || certFile ? (
               <div className="space-y-2">
                 <FileText className="w-8 h-8 mx-auto text-primary" />
                 <p className="text-sm font-medium">
                   {certFile ? certFile.name : 'Certification uploaded'}
                 </p>
-                {profile.certification_document_url && !certFile && (
+                {profile?.certification_document_url && !certFile && (
                   <a 
-                    href={profile.certification_document_url} 
+                    href={profile?.certification_document_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs text-primary hover:underline block"

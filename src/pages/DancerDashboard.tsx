@@ -4,15 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { LogOut, User, Music, Calendar } from "lucide-react";
+import { LogOut, User, Music, Calendar, FileText } from "lucide-react";
 import { DancerProfile } from "@/components/DancerProfile";
 import { EventsList } from "@/components/EventsList";
+import { ApplicationStatus } from "@/components/ApplicationStatus";
 
 const DancerDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showProfile, setShowProfile] = useState(true);
+  const [activeTab, setActiveTab] = useState<'profile' | 'events' | 'applications'>('profile');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -63,6 +65,17 @@ const DancerDashboard = () => {
 
   if (!user) return null;
 
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -88,27 +101,39 @@ const DancerDashboard = () => {
       <main className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex gap-4 mb-6">
           <Button
-            variant={showProfile ? "default" : "outline"}
-            onClick={() => setShowProfile(true)}
+            variant={activeTab === 'profile' ? "default" : "outline"}
+            onClick={() => setActiveTab('profile')}
             className="flex items-center gap-2"
           >
             <User className="w-4 h-4" />
             My Profile
           </Button>
           <Button
-            variant={!showProfile ? "default" : "outline"}
-            onClick={() => setShowProfile(false)}
+            variant={activeTab === 'events' ? "default" : "outline"}
+            onClick={() => setActiveTab('events')}
             className="flex items-center gap-2"
           >
             <Calendar className="w-4 h-4" />
             Browse Events
           </Button>
+          <Button
+            variant={activeTab === 'applications' ? "default" : "outline"}
+            onClick={() => setActiveTab('applications')}
+            className="flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            My Applications
+          </Button>
         </div>
 
-        {showProfile ? (
+        {activeTab === 'profile' && (
           <DancerProfile profile={profile} userId={user.id} />
-        ) : (
+        )}
+        {activeTab === 'events' && (
           <EventsList dancerId={user.id} />
+        )}
+        {activeTab === 'applications' && (
+          <ApplicationStatus dancerId={user.id} />
         )}
       </main>
     </div>

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Calendar, Music2, Users, Eye, Trash2, CheckCircle, XCircle, FileText, User, Ruler, Palette } from "lucide-react";
+import { Calendar, Music2, Users, Eye, Trash2, CheckCircle, XCircle, FileText, User, Ruler, Palette, MessageCircle } from "lucide-react";
+import { Messages } from "@/components/Messages";
 
 interface Event {
   id: string;
@@ -412,6 +413,22 @@ export const OrganizerEventsList = ({ organizerId }: OrganizerEventsListProps) =
                         </a>
                       </div>
                     )}
+
+                    {/* Messages Section */}
+                    <div className="space-y-2">
+                      <Label className="text-base font-semibold flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4" />
+                        Communication
+                      </Label>
+                      <Messages
+                        applicationId={app.id}
+                        dancerId={app.dancer.id}
+                        organizerId={organizerId}
+                        dancerName={app.dancer.name}
+                        organizerName="You"
+                        eventName={selectedEvent?.name || ''}
+                      />
+                    </div>
 
                     <div className="text-xs text-muted-foreground pt-2 border-t">
                       Applied on {new Date(app.created_at).toLocaleDateString('en-US', { 
